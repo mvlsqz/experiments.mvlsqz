@@ -117,3 +117,12 @@ Many of the commands above will leave files and folders behind, that you might
 want to ignore from your repository, so here is included a basic `.gitignore`
 file but chances are that other files and folders will be created that you want
 to ignore, so feel free to customize it as needed.
+
+## Adding your own stuffs, collections, roles or playbooks
+The project is ready for you to add your own roles or playbooks, just clone the
+project and  the recommendation is to use Ansible's native tooling to create them
+
+To add a new role:
+
+```bash
+ansible-creator add role dnsupdates
