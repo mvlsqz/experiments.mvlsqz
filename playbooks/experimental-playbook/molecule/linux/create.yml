@@ -3,18 +3,12 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  vars:
-    molecule_inventory:
-      all:
-        hosts: {}
-        children:
-          molecule:
-            hosts: {}
   tasks:
     - name: Create container network
       containers.podman.podman_network:
         name: molecule-linux-test
         state: present
+
     - name: Create test containers
       containers.podman.podman_container:
         name: "{{ item.name }}"
@@ -40,7 +34,7 @@
       loop_control:
         label: "{{ item.container.Name }}"
 
-    - name: Dump molecule_inventory
+    - name: Create testing inventory file
       ansible.builtin.copy:
         content: "{{ lookup('ansible.builtin.template', 'templates/partial_inventory.yaml.j2') }}"
         dest: "{{ molecule_ephemeral_directory }}/inventory/molecule_inventory.yml"
