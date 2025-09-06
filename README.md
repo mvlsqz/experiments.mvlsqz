@@ -1,78 +1,119 @@
-# Experiments Mvlsqz Collection
+# Ansible Collections - Learning
+These are my personal notes and learning material for Ansible Collections. It
+also includes some practical examples, that demonstrate how to create, use and
+test Ansible Collections, roles or playbooks.
 
-This repository contains the `experiments.mvlsqz` Ansible Collection.
+# Environment Setup
+To run the examples in this repository, you need to have the following tooling
+available on your system:
 
-<!--start requires_ansible-->
-<!--end requires_ansible-->
+## Python version management
+Environment isolation is very important when working with Python projects, as
+mixing of python versions and packages can lead to unexpected result of
+failures, for that mater this project rely on `pyenv` and Python's `venv` module to
+manage python versions and virtual environments.
 
-## External requirements
+## About `pyenv`
+### Installation
+In order to have `pyenv` available on your system, you can follow the official
+guide on the official [GitHub](https://github.com/pyenv/pyenv) repository, and follow the installation instructions for your platform.
 
-Some modules and plugins require external libraries. Please check the
-requirements for each plugin or module you use in the documentation to find out
-which requirements are needed.
-
-## Included content
-
-<!--start collection content-->
-<!--end collection content-->
-
-## Using this collection
-
-```bash
-    ansible-galaxy collection install experiments.mvlsqz
-```
-
-You can also include it in a `requirements.yml` file and install it via
-`ansible-galaxy collection install -r requirements.yml` using the format:
-
-```yaml
-collections:
-  - name: experiments.mvlsqz
-```
-
-To upgrade the collection to the latest available version, run the following
-command:
+### Python 3.10
+This project uses Python 3.10, but in theory you can use any Python version
+later than 3.10, for sake of consistency, I recommend to use Python 3.10. But
+I leave that up to you.
 
 ```bash
-ansible-galaxy collection install experiments.mvlsqz --upgrade
+pyenv install 3.10
 ```
 
-You can also install a specific version of the collection, for example, if you
-need to downgrade when something is broken in the latest version (please report
-an issue in this repository). Use the following syntax where `X.Y.Z` can be any
-[available version](https://galaxy.ansible.com/experiments/mvlsqz):
+### pipx
+The project uses pipx to install some python based CLI tooling to follow the
+principle of isolating dependencies, so you don't end up with a mess of packages
+
+To install pipx, you can follow the official guide on the official [Installation Guide](pipx.pypa.io/stable/installation)
+### poetry for project specific dependencies
+Again, to follow the principle of isolating dependencies, this project uses
+`poetry` tool to manage project specific dependencies, to have them described in
+the `pyproject.toml` file and ensure that the same versions are used across
+different examples or implementations.
+
+To install poetry, you can use pipx:
 
 ```bash
-ansible-galaxy collection install experiments.mvlsqz:==X.Y.Z
+$ pipx install poetry
 ```
 
-See
-[Ansible Using Collections](https://docs.ansible.com/ansible/latest/user_guide/collections_using.html)
-for more details.
+## Prepare the environment
 
-## Release notes
+To Setup the local python version for this project:
 
-See the
-[changelog](https://github.com/ansible-collections/experiments.mvlsqz/tree/main/CHANGELOG.rst).
+```bash
+$ pyenv local 3.10
+# to verify
+$ python --version
+Python 3.10.18
+```
 
-## Roadmap
+To create the virtual environment for this project:
 
-<!-- Optional. Include the roadmap for this collection, and the proposed release/versioning strategy so users can anticipate the upgrade/update cycle. -->
+```bash
+$ python -m venv .ansible
+```
+Then to activate the virtual environment:
 
-## More information
+```bash
+source .ansible/bin/activate
+```
 
-<!-- List out where the user can find additional information, such as working group meeting times, slack/matrix channels, or documentation for the product this collection automates. At a minimum, link to: -->
+Finally, to install the project specific dependencies:
 
-- [Ansible collection development forum](https://forum.ansible.com/c/project/collection-development/27)
-- [Ansible User guide](https://docs.ansible.com/ansible/devel/user_guide/index.html)
-- [Ansible Developer guide](https://docs.ansible.com/ansible/devel/dev_guide/index.html)
-- [Ansible Collections Checklist](https://docs.ansible.com/ansible/devel/community/collection_contributors/collection_requirements.html)
-- [Ansible Community code of conduct](https://docs.ansible.com/ansible/devel/community/code_of_conduct.html)
-- [The Bullhorn (the Ansible Contributor newsletter)](https://docs.ansible.com/ansible/devel/community/communication.html#the-bullhorn)
-- [News for Maintainers](https://forum.ansible.com/tag/news-for-maintainers)
+```bash
+poetry install
+```
 
-## Licensing
+## Python libraries
+This project mostly on the `adt` (Ansible Development Tool) library, which is a suite
+that helps to create, manage and test Ansible Collections, roles and playbooks.
 
-GNU General Public License v3.0 or later.
+To see what is included as tooling within the `adt` library, you can run:
 
-See [LICENSE](https://www.gnu.org/licenses/gpl-3.0.txt) to see the full text.
+```bash
+collections adt --version
+ ansible-builder                          3.1.0
+ ansible-core                             2.17.13
+ ansible-creator                          25.8.0
+ ansible-dev-environment                  25.8.0
+ ansible-dev-tools                        25.8.3
+ ansible-lint                             25.8.2
+ ansible-navigator                        25.8.0
+ ansible-sign                             0.1.2
+ molecule                                 25.7.0
+ pytest-ansible                           25.8.0
+ tox-ansible                              25.8.0
+```
+
+It will have a reasonable set of tools to work with Ansible Collections, the
+versions can be customized via the `pyproject.toml` file, but the recommendation
+is to stick with the versions that are known to work well together.
+
+## Test environment setup
+To run proper testings we will use `molecule` in combination with docker/podman
+to run our E2E tests, so you need to have either docker or podman installed.
+
+### Set collections path
+By default, Ansible will look for collections in the `~/.ansible/collections`
+but it will require to install the collections there, which is not ideal for
+testing purposes, so we will set the `ANSIBLE_COLLECTIONS_PATHS` to a folder
+that we can delete and recreate as needed.
+
+```bash
+export ANSIBLE_COLLECTIONS_PATHS=$PWD/.ansible/collections
+mkdir -p $ANSIBLE_COLLECTIONS_PATHS
+```
+
+## Cleanup
+Many of the commands above will leave files and folders behind, that you might
+want to ignore from your repository, so here is included a basic `.gitignore`
+file but chances are that other files and folders will be created that you want
+to ignore, so feel free to customize it as needed.
