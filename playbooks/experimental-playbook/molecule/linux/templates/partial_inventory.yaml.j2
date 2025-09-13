@@ -1,0 +1,6 @@
+---
+molecule:
+  hosts:
+    {% for host in molecule_yml.platforms -%}
+    {{ host.name }}: {{ host.vars | combine({'ansible_connection': 'containers.podman.podman'}) }}
+    {% endfor -%}

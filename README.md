@@ -32,16 +32,16 @@ The project uses pipx to install some python based CLI tooling to follow the
 principle of isolating dependencies, so you don't end up with a mess of packages
 
 To install pipx, you can follow the official guide on the official [Installation Guide](pipx.pypa.io/stable/installation)
-### poetry for project specific dependencies
+### uv for project specific dependencies
 Again, to follow the principle of isolating dependencies, this project uses
-`poetry` tool to manage project specific dependencies, to have them described in
+`uv` tool to manage project specific dependencies, to have them all described in
 the `pyproject.toml` file and ensure that the same versions are used across
 different examples or implementations.
 
-To install poetry, you can use pipx:
+To install `uv`, you can use pipx:
 
 ```bash
-$ pipx install poetry
+$ pipx install uv
 ```
 
 ## Prepare the environment
@@ -58,25 +58,31 @@ Python 3.10.18
 To create the virtual environment for this project:
 
 ```bash
-$ python -m venv .ansible
+$ uv venv
 ```
 Then to activate the virtual environment:
 
 ```bash
-source .ansible/bin/activate
+source .venv/bin/activate
 ```
 
 Finally, to install the project specific dependencies:
 
 ```bash
-poetry install
+uv sync
+```
+
+OR if you already have an virtual environment activated and just want to update
+the dependencies:
+```bash
+uv sync --active
 ```
 
 ## Python libraries
-This project mostly on the `adt` (Ansible Development Tool) library, which is a suite
+This project rely mostly on the `adt` (Ansible Development Tool) recommended libraries, which is a suite
 that helps to create, manage and test Ansible Collections, roles and playbooks.
 
-To see what is included as tooling within the `adt` library, you can run:
+To see what is included as tooling within the `adt` suite, you can run:
 
 ```bash
 collections adt --version
@@ -93,7 +99,7 @@ collections adt --version
  tox-ansible                              25.8.0
 ```
 
-It will have a reasonable set of tools to work with Ansible Collections, the
+It will have a reasonable set of tools to work with Ansible components, the
 versions can be customized via the `pyproject.toml` file, but the recommendation
 is to stick with the versions that are known to work well together.
 
@@ -108,7 +114,8 @@ testing purposes, so we will set the `ANSIBLE_COLLECTIONS_PATHS` to a folder
 that we can delete and recreate as needed.
 
 ```bash
-export ANSIBLE_COLLECTIONS_PATHS=$PWD/.ansible/collections
+# Set the ansible collections path to the current working directory in the collections folder
+export ANSIBLE_COLLECTIONS_PATHS=$PWD/collections
 mkdir -p $ANSIBLE_COLLECTIONS_PATHS
 ```
 
@@ -117,3 +124,24 @@ Many of the commands above will leave files and folders behind, that you might
 want to ignore from your repository, so here is included a basic `.gitignore`
 file but chances are that other files and folders will be created that you want
 to ignore, so feel free to customize it as needed.
+
+## Adding your own stuffs, roles or playbooks
+This collections project is ready for you to add your own roles or playbooks, just clone the
+project and  the recommendation is to use Ansible's native tooling to create them
+
+To add a new role:
+
+```bash
+ansible-creator add role dnsupdates
+```
+To add a new set of playbooks:
+
+```bash
+ansible-creator add playbook myplaybooks
+```
+
+This will bootstrap the recommended folder structure and files to get you started.
+
+# Practical examples in this repository
+
+- [Basic Playbook](./playbooks/experimental-playbook/): This first example is used to understand how to write a basic playbook and test it using `molecule`, the playbook focus mostly on build out a web server and then a database server, what makes this example interesting is that by using the `molecule`'s work flow the target infrastructure is built and destroyed as part of the test, so you can run it multiple times without worrying about the state of the target infrastructure.

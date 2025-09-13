@@ -1,0 +1,44 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      collections_path: ${ANSIBLE_COLLECTIONS_PATH}
+      # verbosity: 3
+
+platforms:
+  - name: web_server
+    image: quay.io/centos/centos:stream9
+    command: sleep 1d
+    privileged: true
+    vars:
+      http_port: 80
+      server_name: test-web
+      required_packages:
+        - python3
+        - systemd
+  - name: db_server
+    image: quay.io/centos/centos:stream9
+    command: sleep 1d
+    privileged: true
+    vars:
+      db_name: testdb
+      db_user: testuser
+      required_packages:
+        - python3
+        - systemd
+scenario:
+  test_sequence:
+    - dependency
+    - create
+    - prepare
+    - converge
+    - idempotency
+    - verify
+    - cleanup
+    - destroy

@@ -1,29 +1,30 @@
-[tool.black]
-line-length = 100
-
 [project]
 name = "collections"
 version = "0.1.0"
 description = "Experimental Ansible project for leaning collections, roles, and playbooks development and knowlege sharing"
-authors = [
-    {name = "Marvin A. Velasquez",email = "mavelasquezl85@gmail.com"}
-]
-readme = "README.md"
+authors = [{ name = "Marvin A. Velasquez", email = "mavelasquezl85@gmail.com" }]
 requires-python = ">=3.10"
-dependencies = [
+readme = "README.md"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 100
+
+[dependency-groups]
+dev = [
+    "ansible-dev-tools>=25.8.3,<26",
+    "ansible-lint>=25.8.2,<26",
+    "molecule-plugins>=25.8.12,<26",
 ]
 
-[tool.poetry]
-package-mode = false
+[tool.uv]
+package = false
 
 [tool.pytest.ini_options]
 addopts = ["-vvv", "-n", "2", "--log-level", "WARNING", "--color", "yes"]
 filterwarnings = ['ignore:AnsibleCollectionFinder has already been configured']
 testpaths = ["tests"]
-
-[tool.poetry.group.dev.dependencies]
-ansible-dev-tools = "^25.8.3"
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
