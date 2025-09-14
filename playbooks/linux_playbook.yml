@@ -1,31 +1,37 @@
 ---
 - name: Update web servers
   hosts: webservers
-  become: true
-
+  become: false
   tasks:
-    - name: Ensure apache is at the present version
+    - name: Ensure required packages are installed
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ required_packages }}"
+
+    - name: Installing httpd server
       ansible.builtin.dnf:
         name: httpd
         state: present
 
     - name: Write the apache config file
       ansible.builtin.template:
-        src: /srv/httpd.j2
+        src: httpd.conf.j2
         dest: /etc/httpd.conf
         mode: "0644"
 
 - name: Update db servers
   hosts: databases
-  become: true
+  become: false
 
   tasks:
+    - name: Ensure required packages are installed
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ required_packages }}"
+
     - name: Ensure postgresql is at the present version
       ansible.builtin.dnf:
         name: postgresql
         state: present
-
-    - name: Ensure that postgresql is started
-      ansible.builtin.service:
-        name: postgresql
-        state: started
