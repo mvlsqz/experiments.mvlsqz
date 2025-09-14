@@ -137,7 +137,7 @@ read in plain as follows, galaxy dependencies are defined in `requirements.yml` 
 - provisioner: This part is very interesting it is rendered internally to an
 `ansible.cfg` which is read during the scenario execution, as you can see in the
 `config_options` object I'm setting the collections_path parameter to a custom
-location, this for test isolation purposes. Or the verbosity level (line commented), for debugging purposes, the block also can be used to inject environment variables via the `env` parameter inside the object.
+location, this for test isolation purposes. Or the verbosity level (line commented), for debugging purposes, the block also can be used to inject environment variables via the `env` object as child of the `provisioner` object, there are a lot of options that can be included in here but let's keep it simple for now.
 - platforms: In here we define our target hosts, the object here is basic it is
   made of a list of instances that at least have a name, of course by having
 just a name nothing will be created because of lack of instructions, so this
@@ -146,5 +146,123 @@ in which we are providing some variables that will be used later for some
 magical stuffs (stay tuned)
 - scenario: This object will instruct to `molecule` the order in which the
 scenario operations will be executed. By reading the list of elements in the
-object you will get the idea, first the fulfill dependencies, then go and
-creates stuffs and so on...
+object you will get the idea, first the dependencies setup by installing
+modules, collections, etc; then go and creates stuffs and so on...
+
+### Providing the dependencies
+For this example we are going to use the `containers.podman` collection to
+handle containers creation in a dynamic way.
+
+`extensions/molecule/linux/requirements.yml`
+```yml
+---
+collections:
+  - name: containers.podman
+    version: ">=1.10.0"
+```
+
+At this pint we should be able to run the dependency step of the scenario, so
+let's try it out.
+
+```bash
+# cd to the root folder of the project
+# setting the collections path to the current working directory
+export ANSIBLE_COLLECTIONS_PATHS=$PWD/collections
+# go inside the extensions folder
+cd extensions
+# run the dependency step of the linux scenario
+molecule dependency -s linux 
+```
+
+After the command finishes you should see that the `containers.podman`
+collection installed in the collections folder.
+
+```bash
+ansible-galaxy collection list
+  Collection        Version
+  ----------------- -------
+  ansible.netcommon 8.1.0
+  ansible.utils     6.0.0
+  arista.eos        12.0.0
+  containers.podman 1.18.0 # this the one we just installed
+```
+
+### Instructing `molecule` how to create the platforms
+Something that I found useful to keep the isolation principle we are trying to
+follow is that we can customize the way that the platforms are created providing
+it some more close-to-reality parameters, like the network configuration, group
+membership, custom variables, etc. Let's my approach to achieve that.
+
+1. Creating a custom network for the containers
+`extensions/molecule/linux/create.yml`
+```yml
+---
+- name: Create
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Create container network
+      containers.podman.podman_network:
+        name: molecule-linux-test
+        state: present
+```
+Let's start by indicating that the crate playbook will run in the localhost, our
+machine will work as the control node, and we will use the `containers.podman.podman_network` to create an isolated network for our containers, in that way we can guarantee that there will be no interference with other containers that might be running in our machine.
+
+2. Creating the containers
+`extensions/molecule/linux/create.yml`
+```yml
+    - name: Create test containers
+      containers.podman.podman_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image }}"
+        command: "{{ item.command }}"
+        privileged: "{{ item.privileged }}"
+        state: started
+        network: molecule-linux-test
+        systemd: true
+        log_driver: json-file
+      loop: "{{ molecule_yml.platforms }}"
+      register: create_container
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Fail if container is not running
+      when: >
+        item.container.State.ExitCode != 0 or
+        not item.container.State.Running
+      ansible.builtin.include_tasks:
+        file: tasks/create-fail.yml
+      loop: "{{ create_container.results }}"
+      loop_control:
+        label: "{{ item.container.Name }}"
+```
+
+In here we are instructing to create the containers defined in the
+`molecule.yml` by interating over the `molecule_yml.platforms` list, and reading
+the parameters defined there, like the image to use, the command to run, etc.
+Then after the creation of the containers we are checking that the containers are actually running, if not we will include a task that will fail the playbook execution and print some useful information. Check the `tasks/create-fail.yml` file for more details on what is being checked and how.
+
+3. Creating the inventory file
+`extensions/molecule/linux/create.yml`
+```yml
+    - name: Create testing inventory file
+      ansible.builtin.copy:
+        content: "{{ lookup('ansible.builtin.template', 'templates/partial_inventory.yaml.j2') }}"
+        dest: "{{ molecule_ephemeral_directory }}/inventory/molecule_inventory.yml"
+        mode: "0600"
+
+    - name: Force inventory refresh
+      ansible.builtin.meta: refresh_inventory
+
+```
+Here one of funniest things that I found to work on, building a dynamic scenario
+by using Ansible built-in functions, like the `template` within a `lookup` to
+read, build and copy a template file to the ephemeral directory that `molecule`
+uses as testing inventory. The template file is in the `templates` folder, it
+basically templates an inventory file in yaml format, groups the containers by
+the group value in the `vars` block of the `molecule.yml` file, and also appends
+the `vars` defined for each host in the same way.
+
+Then we force an inventory refresh so the new file is read.

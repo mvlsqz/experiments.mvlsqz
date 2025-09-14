@@ -168,3 +168,5 @@ cython_debug/
 poetry.lock
 ansible-navigator.yml
 uv.lock
+.env
+ansible_collections
